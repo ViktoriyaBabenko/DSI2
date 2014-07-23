@@ -50,6 +50,23 @@ all_subjects = [ "1005y", "1410c", "2843B", "2843C", "2843A",
 # Otherwise, set test_subject=all_subjects
 test_subjects = all_subjects
 
+def check_scan_for_files(sc):
+    """Checks to make sure that all the necessary files for this scan are on disk.
+    If they are, it returns True, otherwise False
+    """
+    pkl_file = os.path.join(sc.pkl_dir,sc.pkl_path)
+    if not os.path.exists(pkl_file):
+        print "Unable to locate pickle file %s" % pkl_file
+        return False
+
+    # Check that all the npy files exist
+    for label in sc.track_label_items:
+        npy_path = os.path.join(label.base_dir, label.numpy_path)
+        if not os.path.exists(npy_path):
+            print "unable to load %s" % npy_path
+            return False
+    return True
+
 # Create a data_source
 if SOURCE_TYPE == "mongodb":
     data_source = MongoTrackDataSource(
@@ -60,8 +77,16 @@ if SOURCE_TYPE == "mongodb":
     )
 elif SOURCE_TYPE == "local":
     from dsi2.database.local_data import get_local_data
-    ok_datasets = [tds.get_track_dataset() for tds in \
-            get_local_data(JSON_FILE) if tds.properties.scan_id in test_subjects]
+    local_scans = get_local_data(JSON_FILE)
+    ok_datasets = []
+    for scan in local_scans:
+        if check_scan_for_files(scan):
+            tds = scan.get_track_dataset()
+            if tds.properties.scan_id in test_subjects:
+                ok_datasets.append(tds)
+                if len(ok_datasets) == len(test_subjects):
+                    break
+
     data_source = TrackDataSource(track_datasets=ok_datasets)
 
 # specify the coordinates to search

@@ -79,7 +79,7 @@ class TrackDataSource(HasTraits):
     def __len__(self):
         return len(self.track_datasets)
 
-    def query_ijk(self,ijk,every=0):
+    def query_ijk(self,ijk,every=0,fetch_streamlines=True):
         if self.needs_atlas_update: self.update_atlas()
         return [ tds.subset(tds.get_tracks_by_ijks(ijk),every=every) \
                        for tds in self.track_datasets ]
